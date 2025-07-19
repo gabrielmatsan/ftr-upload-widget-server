@@ -1,0 +1,43 @@
+services:
+  api-widget:
+    build: .
+    depends_on:
+      - postgres
+    container_name: widget-server
+    ports:
+      - 3000:3333
+    environment:
+      - CLOUDFLARE_ACCESS_KEY_ID=$CLOUDFLARE_ACCESS_KEY_ID
+      - CLOUDFLARE_SECRET_ACCESS_KEY=$CLOUDFLARE_SECRET_ACCESS_KEY
+      - CLOUDFLARE_BUCKET=$CLOUDFLARE_BUCKET
+      - CLOUDFLARE_ACCOUNT_ID=$CLOUDFLARE_ACCOUNT_ID
+      - CLOUDFLARE_PUBLIC_URL=$CLOUDFLARE_PUBLIC_URL
+    networks:
+      - widget
+
+  postgres:
+    image: postgres:latest
+    container_name: widget-postgres
+    restart: unless-stopped
+    platform: linux/amd64
+    environment:
+      - POSTGRES_USER=$POSTGRES_USER
+      - POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+      - POSTGRES_DB=$POSTGRES_DB
+    ports:
+      - 5499:5432
+
+    volumes:
+      - postgres-db:/var/lib/postgresql/data
+    networks:
+      - widget
+      - db
+
+volumes:
+  postgres-db:
+
+networks:
+  widget:
+    driver: bridge # bridge = rede interna, não expõe para o mundo externo, não precisaria colocar, por ser o padrão
+  db:
+    driver: bridge
