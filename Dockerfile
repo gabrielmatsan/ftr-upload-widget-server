@@ -47,13 +47,6 @@ COPY --from=build /usr/src/app/node_modules ./node_modules
 COPY --from=build /usr/src/app/dist ./dist
 COPY --from=build /usr/src/app/package.json ./package.json
 
-#Variáveis de ambiente
-ENV CLOUDFLARE_ACCESS_KEY_ID="#"
-ENV CLOUDFLARE_SECRET_ACCESS_KEY="#"
-ENV CLOUDFLARE_BUCKET="#"
-ENV CLOUDFLARE_ACCOUNT_ID="#"
-ENV CLOUDFLARE_PUBLIC_URL="http://localhost"
-
 #Expoe a porta 3333
 EXPOSE 3333
 
