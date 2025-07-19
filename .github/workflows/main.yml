@@ -10,10 +10,34 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
+      # Checkout do código
       - name: Checkout
         id: checkout
         uses: actions/checkout@v4
 
+      # Instalação do Node.js
+      - name: Node.js
+        id: setup-node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Instalação do pnpm
+      - name: Setup pnpm
+        id: setup-pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      # Instalação das dependências
+      - name: Install dependencies
+        id: install-dependencies
+        run: |
+          pnpm install
+
+      # TODO: aqui poderia rodar os testes unitários, integração, etc.
+
+      # Configuração das credenciais da AWS
       - name: Configure AWS Credentials
         id: configure-aws-credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -21,17 +45,43 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ vars.AWS_REGION }}
+
+      # Login no ECR da AWS
       - name: Login to AWS ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      # Geração da tag
       - name: Generate tag
         id: generate-tag
         run: |
           SHA=$(echo $GITHUB_SHA | head -c7)
           echo "sha=$SHA" >> $GITHUB_OUTPUT
 
-      # Nova estrutura, tendo maior abstração
+      # Carrega a imagem para o Docker local, para rodar o Trivy
+      - name: Load the image
+        id: load-image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: |
+            ${{steps.login-ecr.outputs.registry}}/${{ vars.ECR_REPOSITORY }}:test-image
+
+
+      # Trivy é executado, buscando vulnerabilidades na imagem carregada no Docker local
+      - name: Run Trivy vulnerability scanner
+        id: trivy-scan
+        uses: aquasecurity/trivy-action@0.32.0
+        with:
+          image-ref: ${{steps.login-ecr.outputs.registry}}/${{ vars.ECR_REPOSITORY }}:test-image
+          format: "table"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH,MEDIUM,LOW"
+
+      # Build e push da imagem Docker para o ECR da AWS
       - name: build and push Docker image to AWS ECR
         uses: docker/build-push-action@v6
         with:
