@@ -119,7 +119,15 @@ jobs:
           cpu: 1
           memory: 2
           port: 3333
-          wait-for-service-stability-seconds: 180
+          wait-for-service-stability-seconds: 360
 
       - name: AWS App Runner Check
         run: echo "App running... ${{steps.aws-app-runner-deploy.outputs.service-url}}"
+
+      - name: Debug App Runner Status
+        if: failure()
+        run: |
+          aws apprunner describe-service \
+            --service-arn arn:aws:apprunner:us-east-1:842676008268:service/widget-server/17c0f4404db64db5ba85d39cf310d90f \
+            --region ${{ vars.AWS_REGION }} \
+            --output json
