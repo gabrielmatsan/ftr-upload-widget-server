@@ -110,6 +110,6 @@ jobs:
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
           task-definition: ${{ steps.task-definition.outputs.task-definition }}
-          service: ${{ vars.SERVICE_NAME }}
+          service: rocketseat-widget-server-service-zpdh6b20
           cluster: rocketseat-ecs
           wait-for-service-stability: true
